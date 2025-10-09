@@ -57,6 +57,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
+    - name: 安装匹配版本的 Chrome 与 ChromeDriver
+      run: |
+        echo "📦 同步 Chrome 与 ChromeDriver 版本..."
+        python -m pip install chromedriver-autoinstaller
+        python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
+        google-chrome --version || true
+        chromedriver --version || true
+
+        
     - name: 验证必需配置
       id: check_config
       run: |
