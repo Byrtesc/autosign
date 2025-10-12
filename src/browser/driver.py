@@ -215,6 +215,14 @@ class BrowserDriverManager:
 
             # 创建驱动
             self.logger.debug("开始初始化浏览器实例")
+            
+            custom_chrome_path = "/root/chrome-linux64/chrome"
+            if os.path.exists(custom_chrome_path):
+                options.binary_location = custom_chrome_path
+                self.logger.info(f"使用自定义 Chrome 路径: {custom_chrome_path}")
+            else:
+                self.logger.warning(f"未找到自定义 Chrome 路径 {custom_chrome_path}，将使用系统默认 Chrome")
+            
             if UNDETECTED_AVAILABLE:
                 raw_driver = uc.Chrome(options=options)
             else:
