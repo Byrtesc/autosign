@@ -59,11 +59,13 @@ jobs:
         
     - name: 安装匹配版本的 Chrome 与 ChromeDriver
       run: |
-        echo "📦 同步 Chrome 与 ChromeDriver 版本..."
-        python -m pip install chromedriver-autoinstaller
-        python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install()"
-        google-chrome --version || true
-        chromedriver --version || true
+        echo "📦 强制安装 ChromeDriver 141.x..."
+        wget https://storage.googleapis.com/chrome-for-testing-public/141.0.7339.0/linux64/chromedriver-linux64.zip
+        unzip chromedriver-linux64.zip
+        sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+        sudo chmod +x /usr/local/bin/chromedriver
+        google-chrome --version
+        chromedriver --version
 
         
     - name: 验证必需配置
