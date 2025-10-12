@@ -57,16 +57,23 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: 安装匹配版本的 Chrome 与 ChromeDriver
+    - name: 安装 Chrome 和 ChromeDriver（141.0.7390.65）
       run: |
-        echo "📦 强制安装 ChromeDriver 141.x..."
-        wget https://storage.googleapis.com/chrome-for-testing-public/141.0.7339.0/linux64/chromedriver-linux64.zip
+        echo "📦 安装 Chrome for Testing 141.0.7390.65"
+        wget https://storage.googleapis.com/chrome-for-testing-public/141.0.7390.65/linux64/chrome-linux64.zip
+        unzip chrome-linux64.zip
+        sudo mv linux64 /usr/local/chrome-141
+        sudo ln -s /usr/local/chrome-141/chrome /usr/local/bin/google-chrome
+
+        echo "📦 安装匹配的 ChromeDriver"
+        wget https://storage.googleapis.com/chrome-for-testing-public/141.0.7390.65/linux64/chromedriver-linux64.zip
         unzip chromedriver-linux64.zip
-        sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
+        sudo mv linux64/chromedriver /usr/local/bin/chromedriver
         sudo chmod +x /usr/local/bin/chromedriver
+
+        echo "✅ 版本信息："
         google-chrome --version
         chromedriver --version
-
         
     - name: 验证必需配置
       id: check_config
