@@ -60,20 +60,23 @@ jobs:
     - name: 安装 Chrome 和 ChromeDriver（141.0.7390.65）
       run: |
         echo "📦 安装 Chrome for Testing 141.0.7390.65"
+
+        # 下载并解压 Chrome
         wget https://storage.googleapis.com/chrome-for-testing-public/141.0.7390.65/linux64/chrome-linux64.zip
         unzip chrome-linux64.zip
-        sudo mv linux64 /usr/local/chrome-141
-        sudo ln -s /usr/local/chrome-141/chrome /usr/local/bin/google-chrome
+        sudo mv chrome-linux64 /usr/local/chrome-141
+        sudo ln -sf /usr/local/chrome-141/chrome /usr/local/bin/google-chrome
 
         echo "📦 安装匹配的 ChromeDriver"
         wget https://storage.googleapis.com/chrome-for-testing-public/141.0.7390.65/linux64/chromedriver-linux64.zip
         unzip chromedriver-linux64.zip
-        sudo mv linux64/chromedriver /usr/local/bin/chromedriver
+        sudo mv chromedriver-linux64/chromedriver /usr/local/bin/chromedriver
         sudo chmod +x /usr/local/bin/chromedriver
 
-        echo "✅ 版本信息："
+        echo "✅ 安装完成，版本信息如下："
         google-chrome --version
         chromedriver --version
+
         
     - name: 验证必需配置
       id: check_config
