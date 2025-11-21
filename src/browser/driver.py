@@ -127,7 +127,8 @@ class BrowserDriverManager:
                 options = uc.ChromeOptions()
             else:
                 self.logger.info("使用标准selenium创建浏览器")
-                options = Options() if not UNDETECTED_AVAILABLE else uc.ChromeOptions()
+                # 这里 UNDETECTED_AVAILABLE == False 时，已经从 selenium 导入了 Options
+                options = Options()
 
             # 基础配置
             if headless:
@@ -145,9 +146,9 @@ class BrowserDriverManager:
                 "--disable-popup-blocking",
             ]
 
-            # Github Action 和 CI 环境的额外配置
-            import os
+            import os  # 放这里即可
 
+            # Github Action 和 CI 环境的额外配置
             if os.getenv("GITHUB_ACTIONS") or os.getenv("CI"):
                 self.logger.debug("检测到CI环境，添加额外配置")
                 ci_args = [
@@ -213,39 +214,82 @@ class BrowserDriverManager:
             options.add_experimental_option("prefs", prefs)
             self.logger.debug("配置浏览器偏好设置: 弹出窗口允许、中文字体支持")
 
-            # 创建驱动
-            self.logger.debug("开始初始化浏览器实例")
-            
-            # 自动检测 Chrome 路径
+            # =========================
+            # ① 自动检测 Chrome 路径
+            # =========================
+            self.logger.debug("开始初始化浏览器实例 (Chrome 路径探测)")
             possible_paths = [
                 "/root/chrome-linux64/chrome",           # 旧路径（兼容）
-                "/usr/local/chrome-141/chrome",          # CI/CD 安装路径
+                "/usr/local/chrome-141/chrome",          # CI/CD 安装路径（141）
                 "/usr/local/bin/google-chrome",          # 通用系统路径
                 "/usr/bin/google-chrome",                # 备用路径
             ]
-            
+
             custom_chrome_path = None
             for path in possible_paths:
                 if os.path.exists(path):
                     custom_chrome_path = path
                     break
-            
+
             if custom_chrome_path:
+                # 对于标准 selenium 是用 binary_location
                 options.binary_location = custom_chrome_path
                 self.logger.info(f"✅ 使用自定义 Chrome 路径: {custom_chrome_path}")
             else:
                 self.logger.warning(
                     "⚠️ 未找到可用的自定义 Chrome 路径，将使用系统默认 Chrome"
                 )
-            
-            if UNDETECTED_AVAILABLE:
-                raw_driver = uc.Chrome(options=options)
+
+            # =========================
+            # ② 自动检测 ChromeDriver 路径（关键）
+            # =========================
+            # 优先级：config > 环境变量 > 默认 /usr/local/bin/chromedriver
+            driver_path = (
+                config.get("chromedriver_path")
+                or os.environ.get("CHROMEDRIVER_PATH")
+                or "/usr/local/bin/chromedriver"
+            )
+
+            use_custom_driver = False
+            if os.path.exists(driver_path):
+                use_custom_driver = True
+                self.logger.info(f"✅ 使用自定义 ChromeDriver 路径: {driver_path}")
             else:
-                raw_driver = webdriver.Chrome(options=options)
+                self.logger.warning(
+                    f"⚠️ 未找到指定的 ChromeDriver 路径: {driver_path}，将使用默认驱动管理"
+                )
+
+            # =========================
+            # ③ 创建驱动实例
+            # =========================
+            if UNDETECTED_AVAILABLE:
+                # undetected-chromedriver 分支
+                uc_args: Dict[str, Any] = {
+                    "options": options,
+                }
+
+                # 指定浏览器和驱动路径（两者版本保持 141）
+                if custom_chrome_path:
+                    # 一些版本的 uc 支持 browser_executable_path
+                    uc_args["browser_executable_path"] = custom_chrome_path
+                if use_custom_driver:
+                    # 这是关键：强制用我们安装的 141 版本 chromedriver
+                    uc_args["driver_executable_path"] = driver_path
+
+                raw_driver = uc.Chrome(**uc_args)
+            else:
+                # 标准 selenium 分支
+                # 这里一定有 webdriver / Service / Options 的导入
+                if use_custom_driver:
+                    service = Service(executable_path=driver_path)
+                else:
+                    # 让 selenium 自己在 PATH 里找
+                    service = Service()
+
+                raw_driver = webdriver.Chrome(service=service, options=options)
 
             # 使用安全包装器
             self.driver = SafeChrome(raw_driver)
-
             self.wait = WebDriverWait(self.driver, 10)
 
             # 获取浏览器信息
